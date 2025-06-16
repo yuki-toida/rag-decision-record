@@ -1,7 +1,9 @@
-import os
-import glob
+import logging
 import requests
 from typing import List, Dict, Any
+from pathlib import Path
+from dotenv import load_dotenv
+import os
 from langchain_community.document_loaders import TextLoader
 from langchain_community.vectorstores import FAISS
 from langchain_text_splitters import CharacterTextSplitter
@@ -12,20 +14,21 @@ NOTION_API_VERSION = "2022-06-28"
 CHUNK_SIZE = 512
 CHUNK_OVERLAP = 0
 
+# ログ設定
+logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
+
+# 環境変数ロード
+default_env_path = Path(__file__).parent.parent / ".env"
+load_dotenv(dotenv_path=default_env_path if default_env_path.exists() else None)
+
 NOTION_API_TOKEN = os.environ["NOTION_API_TOKEN"]
 NOTION_DATABASE_ID = os.environ["NOTION_DATABASE_ID"]
-NOTION_DIR = os.environ["NOTION_DIR"]
-VECTOR_DIR = os.environ["VECTOR_DIR"]
+NOTION_DIR = Path(os.environ["NOTION_DIR"])
+VECTOR_DIR = Path(os.environ["VECTOR_DIR"])
 
 
-def fetch_notion_database() -> Dict[str, Any]:
+def fetch_notion_database(headers: Dict[str, str]) -> Dict[str, Any]:
     """Notionデータベースの全ページ情報を取得する"""
-    headers = {
-        "accept": "application/json",
-        "content-type": "application/json",
-        "authorization": f"Bearer {NOTION_API_TOKEN}",
-        "Notion-Version": NOTION_API_VERSION
-    }
     payload = {'page_size': 100}
     url = f"https://api.notion.com/v1/databases/{NOTION_DATABASE_ID}/query"
     response = requests.post(url, headers=headers, json=payload).json()
@@ -58,20 +61,21 @@ def extract_text_from_page(result: Dict[str, Any], headers: Dict[str, str]) -> s
                 break
     return body.replace("\n", "")
 
-def save_texts_to_files(texts: List[str], output_dir: str) -> None:
+def save_texts_to_files(texts: List[str], output_dir: Path) -> None:
     """テキストリストを個別ファイルとして保存する"""
-    if not os.path.isdir(output_dir):
-        os.mkdir(output_dir)
+    output_dir.mkdir(exist_ok=True)
     for idx, text in enumerate(texts, 1):
-        with open(f"{output_dir}/{idx}.txt", mode="w", encoding="utf-8") as f:
+        file_path = output_dir / f"{idx}.txt"
+        with file_path.open(mode="w", encoding="utf-8") as f:
             f.write(text)
+        logging.info(f"Saved: {file_path}")
 
-def split_documents_from_files(input_dir: str) -> List[Any]:
+def split_documents_from_files(input_dir: Path) -> List[Any]:
     """テキストファイル群を分割し、LangChain用ドキュメントリストに変換する"""
     documents = []
-    files = glob.glob(input_dir + "/*.txt")
+    files = list(input_dir.glob("*.txt"))
     for file in files:
-        loader = TextLoader(file, encoding="utf-8")
+        loader = TextLoader(str(file), encoding="utf-8")
         page = loader.load()
         text_splitter = CharacterTextSplitter(
             chunk_size=CHUNK_SIZE,
@@ -82,11 +86,12 @@ def split_documents_from_files(input_dir: str) -> List[Any]:
         documents += text_splitter.split_documents(page)
     return documents
 
-def save_documents_to_faiss(documents: List[Any], vector_dir: str) -> None:
+def save_documents_to_faiss(documents: List[Any], vector_dir: Path) -> None:
     """ドキュメントリストをFAISSベクトルDBとして保存する"""
     embeddings = OpenAIEmbeddings(model="text-embedding-3-large")
     vector_store = FAISS.from_documents(documents, embeddings)
-    vector_store.save_local(vector_dir)
+    vector_store.save_local(str(vector_dir))
+    logging.info(f"FAISS DB saved to: {vector_dir}")
 
 def main() -> None:
     """Notionデータベースからデータを取得し、ベクトルDBを作成するメイン処理"""
@@ -97,14 +102,14 @@ def main() -> None:
         "Notion-Version": NOTION_API_VERSION
     }
     try:
-        response = fetch_notion_database()
+        response = fetch_notion_database(headers)
         texts = [extract_text_from_page(result, headers) for result in response["results"]]
         save_texts_to_files(texts, NOTION_DIR)
         documents = split_documents_from_files(NOTION_DIR)
         save_documents_to_faiss(documents, VECTOR_DIR)
-        print("ベクトルDBの作成が完了しました。")
+        logging.info("ベクトルDBの作成が完了しました。")
     except Exception as e:
-        print(f"エラーが発生しました: {e}")
+        logging.error(f"エラーが発生しました: {e}")
 
 if __name__ == "__main__":
     main()
