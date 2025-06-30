@@ -10,11 +10,13 @@
 
 1. **Python 3.12 以上を用意**
 2. **依存パッケージのインストール**
+
    ```sh
    pip install -r requirements.lock
    # または
    rye sync
    ```
+
 3. **環境変数の設定**
    `.env` などで以下を設定してください：
    - `OPENAI_API_KEY` : OpenAI APIキー
@@ -48,4 +50,5 @@ chainlit run src/app.py
 ---
 
 ## ライセンス
+
 MIT License
