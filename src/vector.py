@@ -102,9 +102,9 @@ class NotionVectorizer:
 
     def run(self) -> None:
         try:
-            # response = self.fetch_notion_database()
-            # texts = [self.extract_text_from_page(result) for result in response["results"]]
-            # self.save_texts_to_files(texts)
+            response = self.fetch_notion_database()
+            texts = [self.extract_text_from_page(result) for result in response["results"]]
+            self.save_texts_to_files(texts)
             documents = self.split_documents_from_files()
             self.save_documents_to_faiss(documents)
             logging.info("ベクトルDBの作成が完了しました。")
