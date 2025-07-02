@@ -8,12 +8,12 @@
 
 ## セットアップ手順
 
-1. **Python 3.12 以上を用意**
+1. **Ryeのインストール**
+   Ryeがインストールされていない場合は、[公式サイト](https://rye-up.com/)からインストールしてください。
+
 2. **依存パッケージのインストール**
 
    ```sh
-   pip install -r requirements.lock
-   # または
    rye sync
    ```
 
@@ -32,7 +32,7 @@
 Notionからデータを取得し、ベクトルDBを作成します。
 
 ```sh
-python src/vector.py
+rye run python src/vector.py
 ```
 
 ---
@@ -42,7 +42,7 @@ python src/vector.py
 Chainlitを使ってチャットUIを起動します。
 
 ```sh
-chainlit run src/app.py
+rye run chainlit run src/app.py
 ```
 
 起動後、表示されるURLにアクセスしてください。

@@ -7,7 +7,7 @@ import os
 from langchain_community.document_loaders import TextLoader
 from langchain_community.vectorstores import FAISS
 from langchain_text_splitters import CharacterTextSplitter
-from langchain_openai import OpenAIEmbeddings
+from langchain_huggingface import HuggingFaceEmbeddings
 
 # 定数
 NOTION_API_VERSION = "2022-06-28"
@@ -95,7 +95,7 @@ class NotionVectorizer:
         return documents
 
     def save_documents_to_faiss(self, documents: List[Any]) -> None:
-        embeddings = OpenAIEmbeddings(model="text-embedding-3-large")
+        embeddings = HuggingFaceEmbeddings(model_name="intfloat/multilingual-e5-large")
         vector_store = FAISS.from_documents(documents, embeddings)
         vector_store.save_local(str(self.vector_dir))
         logging.info(f"FAISS DB saved to: {self.vector_dir}")
