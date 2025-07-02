@@ -8,13 +8,17 @@
 
 ## セットアップ手順
 
-1. **Ryeのインストール**
-   Ryeがインストールされていない場合は、[公式サイト](https://rye-up.com/)からインストールしてください。
+1. **uvのインストール**
+   uvがインストールされていない場合は、以下のコマンドでインストールしてください：
+
+   ```sh
+   curl -LsSf https://astral.sh/uv/install.sh | sh
+   ```
 
 2. **依存パッケージのインストール**
 
    ```sh
-   rye sync
+   uv sync
    ```
 
 3. **環境変数の設定**
@@ -32,7 +36,7 @@
 Notionからデータを取得し、ベクトルDBを作成します。
 
 ```sh
-rye run python src/vector.py
+uv run python src/vector.py
 ```
 
 ---
@@ -42,7 +46,7 @@ rye run python src/vector.py
 Chainlitを使ってチャットUIを起動します。
 
 ```sh
-rye run chainlit run src/app.py
+uv run chainlit run src/app.py
 ```
 
 起動後、表示されるURLにアクセスしてください。
